@@ -80,7 +80,35 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Preview image area 🌅
-            Container(),
+            Container(
+              height: 300,
+              width: 300,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueGrey),
+              ),
+              child: _selectedImage != null
+                ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                    _selectedImage!,
+                    fit: BoxFit.cover
+                  ),
+                )
+                : const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 48,
+                    color: Colors.grey,
+                  )
+                ],
+              ),
+            ),
+
+            SizedBox(height: 32),
 
             // Action button 🦋
             Row(
