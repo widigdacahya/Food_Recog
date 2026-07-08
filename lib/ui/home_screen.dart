@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:foodrecog/ui/result_screen.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -56,9 +57,18 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if(croppedFile != null) {
-        setState(() {
-          _selectedImage = File(croppedFile.path);
-        });
+        // setState(() {
+        //   _selectedImage = File(croppedFile.path);
+        // });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ResultScreen(
+                  image: File(croppedFile.path),
+                  predictedName: 'Rendang' // later changed
+              )
+          )
+        );
       }
     } catch (e) {
       debugPrint("Error cropping image 🛑 : $e");
