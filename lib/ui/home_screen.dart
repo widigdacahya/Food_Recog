@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:foodrecog/service/food_classifier.dart';
 import 'package:foodrecog/ui/result_screen.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,6 +18,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+
+  FoodClassifier _classifier = FoodClassifier();
+
+  @override
+  void initState() {
+    super.initState();
+    _classifier.init();
+  }
 
   /*
   * Capture or take image (Camera or from Gallery)
@@ -60,15 +69,31 @@ class _HomeScreenState extends State<HomeScreen> {
         // setState(() {
         //   _selectedImage = File(croppedFile.path);
         // });
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => ResultScreen(
-                  image: File(croppedFile.path),
-                  predictedName: 'Rendang' // later changed
-              )
-          )
+
+        final imageFile = File(croppedFile.path);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Analyzing food...'))
         );
+
+        final prediction = await _classifier.predict(imageFile);
+
+        if(mounted && prediction != null) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ResultScreen(
+                      image: File(croppedFile.path),
+                      predictedName: prediction['label'],
+                      confidence: prediction['confidence'], // later changed
+                  )
+              )
+          );
+        }
+
+
       }
     } catch (e) {
       debugPrint("Error cropping image 🛑 : $e");

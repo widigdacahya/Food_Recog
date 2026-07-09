@@ -9,11 +9,13 @@ class ResultScreen extends StatefulWidget {
 
   final File image;
   final String predictedName;
+  final double confidence;
 
   const ResultScreen({
     super.key,
     required this.image,
-    required this.predictedName
+    required this.predictedName,
+    required this.confidence
   });
 
   @override
@@ -98,7 +100,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ),
                   Text(
-                    'Confidence: 99% test dummy',
+                    'Confidence: ${(widget.confidence * 100).toStringAsFixed(1)}%',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold
