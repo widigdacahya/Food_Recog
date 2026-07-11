@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:foodrecog/service/food_classifier.dart';
 import 'package:foodrecog/ui/result_screen.dart';

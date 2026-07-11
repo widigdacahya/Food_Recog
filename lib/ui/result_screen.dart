@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -25,7 +25,7 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
 
   /*
-  * Fetch API TheMealDB
+  * API TheMealDB
   * */
   Future <Map<String, dynamic>?> fetchFoodDetail(String query) async {
     var url = Uri.parse('https://www.themealdb.com/api/json/v1/1/search.php?s=$query');
@@ -86,6 +86,62 @@ class _ResultScreenState extends State<ResultScreen> {
     return ingredients;
   }
 
+
+  /*
+  * Gemini Info
+  * */
+  Future<Map<String, dynamic>?> fetchNutritionFromGemini(String foodName) async {
+    try {
+      final apiKey = dotenv.env['GEMINI_API_KEY'];
+
+      if(apiKey == null) {
+        debugPrint('Gmeini API Key not found');
+        return null;
+      }
+
+      final model = GenerativeModel(
+        model: 'gemini-3.1-flash-lite',
+        apiKey: apiKey
+      );
+
+      final prompt = '''
+      Provide estimated nutritional information per standard serving for food "$foodName".
+      Reply ONLY in valid JSON format without markdown (```json). Use the following keys:
+      "calories" (string, e.g., "250 kcal"),
+      "carbohydrates" (string, e.g., "30 g"),
+      "fat" (string, e.g., "10 g"),
+      "fiber" (string, e.g., "5 g"),
+      "protein" (string, e.g., "15 g").
+      ''';
+      
+      final response = await model.generateContent([Content.text(prompt)]);
+
+      final cleanText = response.text?.replaceAll('```json', '').replaceAll('```', '').trim();
+
+      if (cleanText != null && cleanText.isNotEmpty) {
+        debugPrint('✨📦 Gemini info: $cleanText');
+        return jsonDecode(cleanText);
+      }
+
+    } catch(e) {
+      debugPrint('✨🛑Error fetching API Gemini: $e');
+    }
+    return null;
+  }
+
+  Widget _buildNutritionRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(value?.toString() ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,15 +181,83 @@ class _ResultScreenState extends State<ResultScreen> {
                       fontWeight: FontWeight.bold
                     ),
                   ),
-                  const Divider(height: 24, thickness: 1),
-                  const Text(
-                    'About the food 🥘',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Nutrition facts estimation',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue
+                        ),
+                      ),
+                      const Text(
+                        'by Gemini ✨',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue
+                        ),
+                      ),
+                    ],
                   ),
+
+                  const SizedBox(height: 10),
+
+                  FutureBuilder<Map<String, dynamic>?>(
+                    future: fetchNutritionFromGemini(widget.predictedName),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError || !snapshot.hasData) {
+                        return const Text('Nutrition fact failed to fetch.');
+                      }
+
+                      final nutrisi = snapshot.data!;
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildNutritionRow('Calories', nutrisi['calories']),
+                            _buildNutritionRow('Carbohydrates', nutrisi['carbohydrates']),
+                            _buildNutritionRow('Fat', nutrisi['fat']),
+                            _buildNutritionRow('Fiber', nutrisi['fiber']),
+                            _buildNutritionRow('Protein', nutrisi['protein']),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'About the food',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepOrange
+                        ),
+                      ),
+                      const Text(
+                        'from themealdb 🍜',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepOrange
+                        ),
+                      ),
+                    ],
+                  ),
+
                   const SizedBox(height: 12,),
                   
                   FutureBuilder<Map<String, dynamic>?>(
@@ -143,7 +267,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return Center(child: CircularProgressIndicator());
                         } else if(snapshot.hasError || !snapshot.hasData) {
-                          return const Text('Receipt data not found');
+                          return const Text('Receipt data not found on themealdb 🍜🙏🏻');
                         }
                         
                         final meal = snapshot.data!;
