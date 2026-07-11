@@ -28,20 +28,39 @@ class _ResultScreenState extends State<ResultScreen> {
   * Fetch API TheMealDB
   * */
   Future <Map<String, dynamic>?> fetchFoodDetail(String query) async {
-    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/search.php?s=$query');
+    var url = Uri.parse('https://www.themealdb.com/api/json/v1/1/search.php?s=$query');
     try {
-      final response = await http.get(url);
+      var response = await http.get(url);
 
       debugPrint('📥 Status Code thmealdb: ${response.statusCode}');
 
       if(response.statusCode == 200) {
         debugPrint('📦 Response Body themealdb: ${response.body}');
 
-        final data = jsonDecode(response.body);
+        var data = jsonDecode(response.body);
         if(data['meals'] != null) {
           return data['meals'][0];
         }
       }
+
+      // if themealdb has no data about the predicted food
+      // use first word
+      final words = query.split('');
+      if(words.isNotEmpty && words[0].length>2) {
+        final fallbackQuery = words[0];
+        url = Uri.parse('https://www.themealdb.com/api/json/v1/1/search.php?s=$fallbackQuery');
+        response = await http.get(url);
+
+        if(response.statusCode == 200) {
+          var data = jsonDecode(response.body);
+          if(data['meals'] != null) {
+            return data['meals'][0];
+          }
+        }
+      }
+
+
+
     } catch (e) {
       debugPrint('🌍Error fetching API themealdb: $e');
     }
