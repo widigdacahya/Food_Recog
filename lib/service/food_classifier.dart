@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:isolate';
+import 'package:flutter/cupertino.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 
 class FoodClassifier {
   Interpreter? _interpreter;
@@ -10,10 +13,34 @@ class FoodClassifier {
 
   Future<void> init() async {
     try {
-      _interpreter =  await Interpreter.fromAsset('assets/1.tflite');
 
       final labelData = await rootBundle.loadString('assets/probability-labels-en.txt');
       _labels = labelData.split('\n').where((e) => e.isNotEmpty).toList();
+
+      const modelUrl = 'URL_STORAGE_FIREBASE_OF_MODEL';
+
+      final directory = await getApplicationDocumentsDirectory();
+      final modelFile = File('${directory.path}/1.tflite');
+
+      if (!await modelFile.exists()) {
+        debugPrint("⬇️ Model not existed yet, downloading from Cloud Storage...");
+
+        final response = await http.get(Uri.parse(modelUrl));
+
+        if (response.statusCode == 200) {
+          await modelFile.writeAsBytes(response.bodyBytes);
+          debugPrint("✅ Download seledonesai! Model saved on: ${modelFile.path}");
+        } else {
+          debugPrint("❌ Failed Model download. Status code: ${response.statusCode}");
+          return;
+        }
+      } else {
+        debugPrint("🚀 Model ready, skip download.");
+      }
+
+      _interpreter = Interpreter.fromFile(modelFile);
+      debugPrint("🤖 Model ML loaded. Ready to use");
+
     } catch(e) {
       print("Error model initialization");
     }

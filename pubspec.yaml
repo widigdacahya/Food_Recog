@@ -22,6 +22,8 @@ dependencies:
   image: ^4.9.1
   google_generative_ai: ^0.4.7
   flutter_dotenv: ^6.0.1
+  firebase_core: ^4.11.0
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:
