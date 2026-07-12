@@ -1,7 +1,7 @@
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:foodrecog/service/food_classifier.dart';
+import 'package:foodrecog/ui/result_screen.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -16,6 +16,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+
+  FoodClassifier _classifier = FoodClassifier();
+
+  @override
+  void initState() {
+    super.initState();
+    _classifier.init();
+  }
 
   /*
   * Capture or take image (Camera or from Gallery)
@@ -56,9 +64,34 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if(croppedFile != null) {
-        setState(() {
-          _selectedImage = File(croppedFile.path);
-        });
+        // setState(() {
+        //   _selectedImage = File(croppedFile.path);
+        // });
+
+        final imageFile = File(croppedFile.path);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Analyzing food...'))
+        );
+
+        final prediction = await _classifier.predict(imageFile);
+
+        if(mounted && prediction != null) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ResultScreen(
+                      image: File(croppedFile.path),
+                      predictedName: prediction['label'],
+                      confidence: prediction['confidence'], // later changed
+                  )
+              )
+          );
+        }
+
+
       }
     } catch (e) {
       debugPrint("Error cropping image 🛑 : $e");
@@ -80,7 +113,35 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Preview image area 🌅
-            Container(),
+            Container(
+              height: 300,
+              width: 300,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueGrey),
+              ),
+              child: _selectedImage != null
+                ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                    _selectedImage!,
+                    fit: BoxFit.cover
+                  ),
+                )
+                : const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 48,
+                    color: Colors.grey,
+                  )
+                ],
+              ),
+            ),
+
+            SizedBox(height: 32),
 
             // Action button 🦋
             Row(

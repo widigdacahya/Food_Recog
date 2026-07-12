@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1069867103409",
+    "project_id": "foodrecog-dicoding-chy",
+    "storage_bucket": "foodrecog-dicoding-chy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069867103409:android:f6a0f4bb8f54cc5daf1e90",
+        "android_client_info": {
+          "package_name": "com.cahyul.foodrecog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "KEY_FIREBASE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
